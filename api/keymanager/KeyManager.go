@@ -24,6 +24,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 )
 
 // ApiKey stores the user's
@@ -36,15 +37,16 @@ type ApiKey struct {
 // the user's storage
 func (k *ApiKey) Store() {
 	dir, _ := os.UserHomeDir()
-	path := dir + "\\.config\\lux"
+	path := filepath.Join(dir, ".config", "lux")
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		_ = os.MkdirAll(path, os.ModePerm)
 	}
 	var f *os.File
-	if _, err := os.Stat(path + "\\key.json"); os.IsNotExist(err) {
-		f, _ = os.Create(path + "\\key.json")
+	fname := filepath.Join(path, "key.json")
+	if _, err := os.Stat(fname); os.IsNotExist(err) {
+		f, _ = os.Create(fname)
 	} else {
-		f, _ = os.OpenFile(path+"\\key.json", os.O_CREATE|os.O_WRONLY, 0644)
+		f, _ = os.OpenFile(fname, os.O_CREATE|os.O_WRONLY, 0644)
 	}
 	b, _ := json.Marshal(&k)
 	_, e := f.Write(b)
@@ -58,7 +60,7 @@ func (k *ApiKey) Store() {
 // storage
 func (k *ApiKey) Extract() {
 	dir, _ := os.UserHomeDir()
-	path := dir + "\\.config\\lux\\key.json"
+	path := filepath.Join(dir, ".config", "lux", "key.json")
 	b, _ := ioutil.ReadFile(path)
 	_ = json.Unmarshal(b, &k)
 }
@@ -82,6 +84,10 @@ func PrintLuxHasAPIKey() bool {
 // GetAPIKey allows packages to
 // request the api key
 func GetAPIKey() string {
+	envKey := os.Getenv("LUX_API_KEY")
+	if envKey != "" {
+		return envKey
+	}
 	var key ApiKey
 	key.Extract()
 	return key.Key
