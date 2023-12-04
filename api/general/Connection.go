@@ -22,8 +22,10 @@ package general
 
 import (
 	"bytes"
-	"github.com/bandev/lux/api/keymanager"
+	"context"
 	"net/http"
+
+	"github.com/bandev/lux/api/keymanager"
 )
 
 // Connection contains information about
@@ -39,8 +41,8 @@ type Connection struct {
 // with the path provided as a string.
 // Usually a JSON object is returned in
 // byte array form to help with parsing.
-func (c Connection) Get(path string) []byte {
-	request, _ := http.NewRequest("GET", c.Base+path, nil)
+func (c Connection) Get(ctx context.Context, path string) []byte {
+	request, _ := http.NewRequestWithContext(ctx, http.MethodGet, c.Base+path, nil)
 	request.Header.Set("Govee-API-Key", c.Key)
 	response, err := c.http.Do(request)
 
@@ -62,8 +64,8 @@ func (c Connection) Get(path string) []byte {
 
 // Put uses the PUT request to send
 // data to the API.
-func (c Connection) Put(path string, body []byte) []byte {
-	request, _ := http.NewRequest("PUT", c.Base+path, bytes.NewBuffer(body))
+func (c Connection) Put(ctx context.Context, path string, body []byte) []byte {
+	request, _ := http.NewRequestWithContext(ctx, http.MethodPut, c.Base+path, bytes.NewBuffer(body))
 	request.Header.Set("Govee-API-Key", c.Key)
 	request.Header.Set("Content-Type", "application/json")
 	response, err := c.http.Do(request)
@@ -87,8 +89,8 @@ func (c Connection) Put(path string, body []byte) []byte {
 // TestKey uses the devices endpoint
 // to verify that the API Key provided
 // is valid.
-func (c Connection) TestKey() bool {
-	request, _ := http.NewRequest("GET", c.Base+"v1/devices", nil)
+func (c Connection) TestKey(ctx context.Context) bool {
+	request, _ := http.NewRequestWithContext(ctx, http.MethodGet, c.Base+"v1/devices", nil)
 	request.Header.Set("Govee-API-Key", c.Key)
 	response, _ := c.http.Do(request)
 	return !(response.StatusCode == 401)
